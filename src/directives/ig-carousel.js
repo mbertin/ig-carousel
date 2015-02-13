@@ -5,6 +5,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             itemsToDisplay = [],
             indexToDisplay = 0,
             deltaX = 100,
+            deltaZ = 100,
             deltaScale = 0.1;
             lastItems = [],
             interval = undefined;
@@ -82,66 +83,6 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             });
         }
 
-        function computeTransition(item, withLeft) {
-            if(rtlTmp) {
-                $(item).animate({
-                        opacity: 0,
-                        left: "-100px"
-                    },
-                    defaultOptions.transitionDuration,
-                    function() {
-
-                    }
-                );
-            }
-            else {
-
-            }
-        }
-
-        function computeItemExit(item) {
-            if(rtl) {
-                $(item).animate({
-                        opacity: 0,
-                        left: "-100px"
-                    },
-                    defaultOptions.transitionDuration,
-                    function() {
-
-                    }
-                );
-            }
-            else {
-                $(item).animate({
-                        opacity: 0,
-                        right: "-100px",
-                    },
-                    defaultOptions.transitionDuration,
-                    function() {
-
-                    }
-                );
-            }
-        }
-
-        function computeItemEntrance(item) {
-            if(rtl) {
-                item.style.right = item.
-                $(item).animate({
-                    opacity: 1,
-                    right: 0,
-                    transform: "scale(0.85)", // TODO
-                    'z-index': 1
-                },
-                speed, function() {
-
-                });
-            }
-            else {
-
-            }
-        }
-
         /**
          * Apply new style
          * @return {[type]} [description]
@@ -168,22 +109,19 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                         interval = runInterval();
                     }
                 });
+                item.style.position = "absolute";
 
                 if(itemsToDisplay.indexOf(item.id) === -1){
                     item.style.display = "none";
-                    item.style.position = "absolute";
-                    item.style.left = $(containerElement).width/2 + "px";
-                    item.style['z-index'] = 0;
-                    item.style.transform = "scale(0.2)";
+                    item.style.left = ($(containerElement).width()/4) + "px";
+                    item.style['z-index'] = -1;
+                    item.style.transform = "scale(0.8)";
                 }
                 else {
-
                     var itemIndex = itemsToDisplay.indexOf(item.id);
-                    item.style.position = "absolute";
                     item.style.left = (itemIndex * deltaX) + "px";
-                    item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex));
+                    item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
                     item.style.transform = "scale(" + (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)) + ")";
-
                     item.style.display = "block";
                 }
             });
@@ -254,170 +192,153 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
 
             $.each(itemsElements, function(index, item) {
 
+                var itemIndex = itemsToDisplay.indexOf(item.id);
+                var leftPos = (itemIndex * deltaX);
+                var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
+                var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
+                var changedZIndex = false;
+
                 if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) > -1) { // Was displayed before and still displayed
 
-                    console.log("Already show: " + index);
-
-                    var itemIndex = itemsToDisplay.indexOf(item.id);
-                    var halfDuration = duration/2;
-                    var leftPos = (itemIndex * deltaX);
-                    var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
-                    var halfNewScale = newScale - deltaScale/2;
-                    var halfLeftPos = (leftPos + ((deltaX/2)/ halfNewScale));
-
-                   /* if(itemIndex === centerIndex || itemIndex === centerIndex-1) {
-                        $(item).animate({
-                                left: halfLeftPos + "px",
-                                scale: halfNewScale,
-                            },
-                            halfDuration,
-                            function() {
-                                item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex));
-                                $(item).animate({
-                                    left: leftPos + "px",
-                                    scale: newScale,
-                                },
-                                halfDuration,
-                                function() {});
+                    $(item).velocity({
+                        left: leftPos + "px",
+                        scale: newScale,
+                    },
+                    {
+                        duration: duration,
+                        progress: function(elements, complete, remaining, start, tweenValue) {
+                            if(complete * 100 > 50 && !changedZIndex) {
+                                console.log("Change z-index");
+                                item.style['z-index'] = zIndex;
+                                changedZIndex = true;
                             }
-                        );
-                    }
-                    else {*/
-                        item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex));
-
-                        $(item).animate({
-                                left: leftPos,
-                                scale: newScale,
-                            },
-                            duration,
-                            function() {
-                            }
-                        );
-                  //  }
-
+                        }
+                    });
                 }
                 else if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) === -1) { //item entrance
-                    console.log("Entrance : " + index);
 
-                    var itemIndex = itemsToDisplay.indexOf(item.id);
-                    var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale))
-
-                    item.style.display = "block";
                     item.style.transform = "scale(0.2)";
                     item.style.opacity = 0;
                     item.style['z-index']  = - 1;
+                    item.style.display = "block";
 
-                    $(item).animate({
-                            left: (itemIndex * deltaX) + "px",
-                            scale: (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)),
-                            opacity: 1
-                        },
-                        duration,
-                        function() {
-                            item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex));
+                    $(item).velocity({
+                        left: leftPos + "px",
+                        opacity: 1,
+                        scale: newScale
+                    },
+                    {
+                        duration: duration,
+                        progress: function(elements, complete, remaining, start, tweenValue) {
+                            if(complete * 100 > 50 && !changedZIndex) {
+                                console.log("Change z-index");
+                                item.style.display = "block";
+                                item.style['z-index'] = zIndex;
+                                changedZIndex = true;
+                            }
                         }
-                    );
+                    });
                 }
                 else if(itemsToDisplay.indexOf(item.id) === -1 && lastItems.indexOf(item.id) > -1) { //item exitance
 
-                    console.log("Exit : " + index);
-
-                    item.style['z-index'] = item.style['z-index'] - 1;
-
-                    $(item).animate({
-                            left: ($(containerElement).width()/2) + "px",
-                            opacity: 0,
-                            scale: 0.2
+                    $(item).velocity({
+                        left: ($(containerElement).width()/4) + "px",
+                        opacity: 0,
+                        scale: 0.7
+                    }, {
+                        duration: duration,
+                        progress: function(elements, complete, remaining, start, tweenValue) {
+                            if(complete * 100 > 50 && !changedZIndex) {
+                                console.log("Change z-index");
+                                item.style['z-index'] = -1;
+                                changedZIndex = true;
+                            }
                         },
-                        duration,
-                        function() {
+                        complete: function(elements) {
                             item.style.display = "none";
                         }
-                    );
+                    });
                 }
             });
         }
 
         function moveLeft(duration) {
 
-            indexToDisplay = ((indexToDisplay - 1) < 0) ? itemsElements.length - 1 : indexToDisplay - 1;;
+            indexToDisplay = ((indexToDisplay - 1) < 0) ? itemsElements.length - 1 : indexToDisplay - 1;
 
             selectItemsToDisplay(indexToDisplay);
             var centerIndex = itemsToDisplay.indexOf(itemsElements[indexToDisplay].id);
             var itemDisplayed = itemsElements[indexToDisplay];
 
              $.each(itemsElements, function(index, item) {
+
+                var itemIndex = itemsToDisplay.indexOf(item.id);
+                var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
+                var changedZIndex = false;
+                var leftPos = (itemIndex * deltaX);
+                var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
+
                 if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) > -1) { // Was displayed before and still displayed
 
-                    var itemIndex = itemsToDisplay.indexOf(item.id);
-                    var halfDuration = duration/2;
-                    var leftPos = (itemIndex * deltaX);
-                    var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
-                    var halfNewScale = newScale - deltaScale/2;
-                    var halfLeftPos = (leftPos - ((deltaX/2)* halfNewScale));
-
-             /*       if(itemIndex === centerIndex || itemIndex === centerIndex + 1) {
-                        $(item).animate({
-                                left: halfLeftPos + "px",
-                                scale: halfNewScale,
-                            },
-                            halfDuration,
-                            function() {
-                                item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex));
-                                $(item).animate({
-                                    left: leftPos + "px",
-                                    scale: newScale,
-                                },
-                                halfDuration,
-                                function() {});
+                    $(item).velocity({
+                        left: leftPos,
+                        scale: newScale,
+                    }, {
+                        duration: duration,
+                        progress: function(elements, complete, remaining, start, tweenValue) {
+                            if(complete * 100 > 50 && !changedZIndex) {
+                                console.log("Change z-index");
+                                item.style['z-index'] = zIndex;
+                                changedZIndex = true;
                             }
-                        );
-                    }
-                    else {*/
-                        item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex));
-                        $(item).animate({
-                                left: leftPos,
-                                scale: newScale,
-                            },
-                            duration,
-                            function() {}
-                        );
-                    // }
+                        }
+                    });
                 }
                 else if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) === -1) { //item entrance
-                    var itemIndex = itemsToDisplay.indexOf(item.id);
-                    var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale))
 
                     item.style.transform = "scale(0.2)";
                     item.style.display = "block";
                     item.style.opacity = 0;
                     item.style['z-index']  = - 1;
 
-                    $(item).animate({
+                    $(item).velocity({
                             left: (itemIndex * deltaX) + "px",
                             scale: (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)),
-                            opacity: 1
-                        },
-                        duration,
-                        function() {
-                            item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex));
+                            opacity: 1,
+                        },{
+                             /* Wait 100ms before alternating back. */
+                        duration: duration,
+                        progress: function(elements, complete, remaining, start, tweenValue) {
+                            if(complete * 100 > 50 && !changedZIndex) {
+                                console.log("Change z-index");
+                                item.style['z-index'] = zIndex;
+                                changedZIndex = true;
+                            }
                         }
-                    );
+                    });
                 }
                 else if(itemsToDisplay.indexOf(item.id) === -1 && lastItems.indexOf(item.id) > -1) { //item exitance
 
                     item.style['z-index']  = - 1;
 
-                    $(item).animate({
+                    $(item).velocity({
                             left: ($(containerElement).width()/4) + "px",
                             opacity: 0,
-                            scale: 0.2
+                        },{
+                             /* Wait 100ms before alternating back. */
+                        duration: duration,
+                        progress: function(elements, complete, remaining, start, tweenValue) {
+                            console.log((complete * 100) + "%");
+                            if(complete * 100 > 50 && !changedZIndex) {
+                                console.log("Change z-index");
+                                item.style['z-index'] = -1;
+                                changedZIndex = true;
+                            }
                         },
-                        duration,
-                        function() {
+                        complete: function(elements) {
                             item.style.display = "none";
                         }
-                    );
+                    });
                 }
             });
         }
@@ -473,10 +394,18 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                         selectItemsToDisplay(scope.carouselIndex, defaultOptions.itemDisplayed);
                         initItemsStyle();
 
-                        moveRight(10);
+
+                        containerElement.style.display = "none";
+
+                        for(var i = 0 ; i < itemsElements.length ; i ++ ) {
+                            $timeout(function() {
+                                moveRight(0);
+                            }, 0);
+                        }
+
                         $timeout(function() {
-                            moveLeft(10);
-                        }, 10);
+                            containerElement.style.display = "block";
+                        }, 200);
 
                         if(defaultOptions.autoSlide) {
                             interval = runInterval();
