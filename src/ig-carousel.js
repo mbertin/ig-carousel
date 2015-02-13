@@ -1,5 +1,6 @@
 /**
- * Created by Mathieu Bertin on 10/02/2015.
+ * Created by Mathieu Bertin (iGraal) on 10/02/2015.
+ * Version 1.0.0
  */
 
 //Require use for browserify

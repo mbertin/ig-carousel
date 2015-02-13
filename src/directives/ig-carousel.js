@@ -18,7 +18,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             rtl: true,//right to left
         };
 
-        var rtlTmp = true; //TODO init with attr
+        var rtlTmp = true;
 
         /**
          * Init container style (ul)
@@ -394,19 +394,19 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                         selectItemsToDisplay(scope.carouselIndex, defaultOptions.itemDisplayed);
                         initItemsStyle();
 
-
                         containerElement.style.display = "none";
 
+
+                        //
                         for(var i = 0 ; i < itemsElements.length ; i ++ ) {
-                            $timeout(function() {
-                                moveRight(0);
-                            }, 0);
+                            $timeout(moveRight(0), 0);
                         }
 
                         $timeout(function() {
                             containerElement.style.display = "block";
                         }, 200);
 
+                        //
                         if(defaultOptions.autoSlide) {
                             interval = runInterval();
                         }
