@@ -359,14 +359,15 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             scope: true,
             compile: function(tElement, tAttributes) {
 
-                addStyleOnContainer(tElement[0]);
 
                 return function(scope, element, attr) {
+                    //init
+                    addStyleOnContainer(element[0]);
 
-                    console.log("Link");
-                    console.log("rtl : " + attr.rtl);
                     var rtl = angular.isDefined(attr.rtl) ?  attr.rtl === "true" : true;
                     var auto = angular.isDefined(attr.autoSlide) ?  attr.autoSlide === "true" : true;
+
+                    //set options TODO rename in options and see defaults ooptions object
                     defaultOptions = {
                         autoSlide: auto,
                         rtl: rtl,
@@ -377,7 +378,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
 
                     scope.carouselIndex = 0;
                     indexToDisplay = 0;
-
+/*
                     scope.changeIndex = function (index) {
                         if(index !== indexToDisplay) {
                             if(angular.isDefined(interval)) {
@@ -385,7 +386,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                             }
                             move(index);
                         }
-                    }
+                    }*/
 
                     //Timeout needed in order to force digest so generate ng-repeat elements
                     $timeout(function (){
