@@ -6,29 +6,18 @@
 
 		 <!--Import Vendor (order is important)-->
         <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
-        <script type="text/javascript" src="../bower_components/angular-animate/angular-animate.min.js"></script>
         <script type="text/javascript" src="../bower_components/jquery/dist/jquery.min.js"></script>
         <script type="text/javascript" src="../dist/ig-carousel.js"></script>
 
         <script type="text/javascript" src="main.js"></script>
 	</head>
-	<body>
-		<ul ig-carousel>
-			<li>
-				<img src="http://devsnippets.com/img/islands/07.jpg" />
-			<li/>
-			<li>
-				<img src="http://gid.unep-wcmc.org/images/Global_islands.jpg" />
-			<li/>
-			<li>
-				<img src="http://2.bp.blogspot.com/-1rYjOQ6qypE/Tk-te2EZsJI/AAAAAAAAEK4/M5zLeRWD5hg/s1600/bora-bora_island%252C_tahiti%252C_french_polynesia.jpg" />
-			<li/>
-			<li>
-				<img src="http://2.bp.blogspot.com/-xVmzpbPBt3Q/T0UY1iSLPTI/AAAAAAAAFfs/G5Zwt8YdQ-A/s1600/Trade+Winds,+Maldive+Islands.jpg" />
-			<li/>
-			<li>
-				<img src="http://www.islandhideaways.com/wire/assets/files/2083/necker-island-1.jpg" />
-			<li/>
+	<body ng-controller="mainController">
+		<ul data-ig-carousel animation-duration="1000" auto-slide="false" rtl="false" slide-duration="3" item-displayed="5">
+			<li><img src="img/1.png"/></li>
+			<li><img src="img/2.png"/></li>
+			<li><img src="img/3.png"/></li>
+			<li><img src="img/4.png"/></li>
+			<li><img src="img/5.png"/></li>
 		</ul>
 	</body>
 </html>

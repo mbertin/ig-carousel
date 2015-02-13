@@ -1,14 +1,14 @@
 ul {
-	width: 100%;
-	height: 200px;
+	width: 572px;
+	height: 223px;
 	position: relative;
-	padding: 0; 
+	padding: 0;
 }
 
 li {
-	width: 400px;
+	width: 404px;
+	height: 223px;
 	list-style: none;
-	height: 200px;
 	position: absolute;
 }
 
