@@ -1,15 +1,6 @@
-module.exports = ['$timeout', '$interval', '$compile', function($timeout, $interval, $compile) {
+module.exports = ['$timeout', '$interval', '$compile', 'IGCarouselService', function($timeout, $interval, $compile, IGCarouselService) {
 
-        var containerElement = null,
-            itemsElements = [],
-            itemsToDisplay = [],
-            indexToDisplay = 0,
-            deltaX = 100,
-            deltaZ = 100,
-            deltaScale = 0.1;
-            lastItems = [],
-            interval = undefined;
-
+        // Constants
         var defaultOptions = {
             autoSlide: true,
             transitionDuration: 1000, //in ms
@@ -18,7 +9,20 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             rtl: true,//right to left
         };
 
-        var rtlTmp = true;
+        var deltaZ = 100,
+            minScale = 0.8;
+
+        //
+        var containerElement = null,
+            itemsElements = [],
+            itemsToDisplay = [],
+            indexToDisplay = 0,
+            deltaX = 0,
+            deltaScale = 0.0,
+            lastItems = [],
+            interval,
+            options,
+            rtlTmp;
 
         /**
          * Init container style (ul)
@@ -29,22 +33,23 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             containerElement.style.position = 'relative';
             containerElement.style.overflow = 'hidden';
             containerElement.style.margin = '0 auto';
+            containerElement.style.padding = '0';
         }
 
         /**
-         * [selectItemsToDisplay description]
+         * Select the items to be displayed in function of the index given
          * @return {[type]} [description]
          */
-        function selectItemsToDisplay(index){
-            if(defaultOptions.itemDisplayed % 2 == 0) { //nb element to display have to be even
-                defaultOptions.itemDisplayed--;
+        function selectItemsToDisplay(index, nbItemsToDisplay){
+            if(nbItemsToDisplay % 2 === 0) { //nb element to display have to be even
+                nbItemsToDisplay--;
             }
 
             lastItems = angular.copy(itemsToDisplay);
             itemsToDisplay = [];
 
             // Get the items to be displayed
-            var end = (defaultOptions.itemDisplayed-1) / 2;
+            var end = (nbItemsToDisplay-1) / 2;
             var start = 0 - end;
             var nbElems = itemsElements.length;
 
@@ -65,7 +70,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
 
         /**
          * initialize the items
-         * add ng click on items
+         * Add index to all items, and add listener onClick event
          * @params scope, needed for compiled html and make ng-click effective
          */
         function initItems(scope) {
@@ -85,7 +90,6 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
 
         /**
          * Apply new style
-         * @return {[type]} [description]
          */
         function initItemsStyle () {
 
@@ -102,7 +106,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                     }
                 });
                 $(item).mouseleave(function () {
-                    if(defaultOptions.autoSlide){
+                    if(options.autoSlide){
                         if(angular.isDefined(interval)) {
                             $interval.cancel(interval);
                         }
@@ -115,78 +119,68 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                     item.style.display = "none";
                     item.style.left = ($(containerElement).width()/4) + "px";
                     item.style['z-index'] = -1;
-                    item.style.transform = "scale(0.8)";
+                    item.style.transform = "scale(minScale)";
                 }
                 else {
                     var itemIndex = itemsToDisplay.indexOf(item.id);
                     item.style.left = (itemIndex * deltaX) + "px";
                     item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
-                    item.style.transform = "scale(" + (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)) + ")";
+                    item.style.transform = "scale(" + (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)) + ")";
                     item.style.display = "block";
                 }
             });
         }
 
-        function getMinDiff(newIndex, oldIndex) {
-
-            var leftCursor = oldIndex,
-                rightCursor = oldIndex
-                diff = 0;
-
-            for (diff; leftCursor !== newIndex && rightCursor !== newIndex; diff++) {
-                leftCursor = ((leftCursor - 1) < 0) ? itemsElements.length - 1 : leftCursor - 1;
-                rightCursor = ((rightCursor + 1) >= itemsElements.length) ? 0 : rightCursor + 1;
-            };
-
-            if(leftCursor === newIndex) {
-                diff = diff * -1;
-            }
-
-            return diff;
-        }
 
 
+        /**
+         * Move items to the new index
+         * Function called with on click function
+         * @param  {[type]} newIndex [description]
+         * @return {[type]}          [description]
+         */
         function move(newIndex) {
-            var diffIndex = getMinDiff(newIndex, indexToDisplay),
+            var diffIndex = IGCarouselService.getMinDiff(newIndex, indexToDisplay, itemsElements.length),
                 nbStep = Math.abs(diffIndex);
 
             tmpRtl = diffIndex > 0;
-            var duration = defaultOptions.transitionDuration  - (nbStep * 30);
+            var duration = options.transitionDuration  - (nbStep * 30);
             var timeoutDelay = 0;
 
+            var timeFunc = function () {
+                if(tmpRtl) {
+                    moveRTL(duration);
+                }
+                else {
+                    moveLTR(duration);
+                }
+
+                if(options.autoSlide && (indexToDisplay === newIndex) ){
+                    if(angular.isDefined(interval)) {
+                        $interval.cancel(interval);
+                    }
+                    interval = runInterval();
+                }
+            };
+
+            //Repeat move element in function of nbStep
             for(var i = 0 ; i < nbStep ; i++) {
-
-                $timeout(function (){
-                    if(tmpRtl) {
-                        console.log("Move Right");
-                        moveRight(duration);
-                    }
-                    else {
-                        console.log("Move Left");
-                        moveLeft(duration);
-                    }
-
-                    if(defaultOptions.autoSlide && (indexToDisplay === newIndex) ){
-                        if(angular.isDefined(interval)) {
-                            $interval.cancel(interval);
-                        }
-                        interval = runInterval();
-                    }
-
-                }, timeoutDelay);
-
+                $timeout(timeFunc, timeoutDelay);
                 timeoutDelay = duration;
-                duration = defaultOptions.transitionDuration  - ((nbStep - i) * 30);
+                duration = options.transitionDuration  - ((nbStep - i) * 30);
             }
 
-            //indexToDisplay = newIndex;
         }
 
-        function moveRight(duration) {
+         /**
+         * Move items from Right To Left (RTL)
+         * @param  integer duration the animation duration in ms
+         */
+        function moveRTL(duration) {
 
             indexToDisplay = indexToDisplay + 1 >= itemsElements.length ? 0 : indexToDisplay + 1;
 
-            selectItemsToDisplay(indexToDisplay);
+            selectItemsToDisplay(indexToDisplay, options.itemDisplayed);
             var centerIndex = itemsToDisplay.indexOf(itemsElements[indexToDisplay].id);
             var itemDisplayed = itemsElements[indexToDisplay];
 
@@ -194,7 +188,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
 
                 var itemIndex = itemsToDisplay.indexOf(item.id);
                 var leftPos = (itemIndex * deltaX);
-                var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
+                var newScale = (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
                 var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
                 var changedZIndex = false;
 
@@ -208,7 +202,6 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                console.log("Change z-index");
                                 item.style['z-index'] = zIndex;
                                 changedZIndex = true;
                             }
@@ -231,7 +224,6 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                console.log("Change z-index");
                                 item.style.display = "block";
                                 item.style['z-index'] = zIndex;
                                 changedZIndex = true;
@@ -249,7 +241,6 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                console.log("Change z-index");
                                 item.style['z-index'] = -1;
                                 changedZIndex = true;
                             }
@@ -262,11 +253,15 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             });
         }
 
-        function moveLeft(duration) {
+        /**
+         * Move items from Left To Right (LTR)
+         * @param  integer duration the animation duration in ms
+         */
+        function moveLTR(duration) {
 
             indexToDisplay = ((indexToDisplay - 1) < 0) ? itemsElements.length - 1 : indexToDisplay - 1;
 
-            selectItemsToDisplay(indexToDisplay);
+            selectItemsToDisplay(indexToDisplay, options.itemDisplayed);
             var centerIndex = itemsToDisplay.indexOf(itemsElements[indexToDisplay].id);
             var itemDisplayed = itemsElements[indexToDisplay];
 
@@ -276,7 +271,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                 var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
                 var changedZIndex = false;
                 var leftPos = (itemIndex * deltaX);
-                var newScale = (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
+                var newScale = (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
 
                 if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) > -1) { // Was displayed before and still displayed
 
@@ -287,7 +282,6 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                console.log("Change z-index");
                                 item.style['z-index'] = zIndex;
                                 changedZIndex = true;
                             }
@@ -303,14 +297,13 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
 
                     $(item).velocity({
                             left: (itemIndex * deltaX) + "px",
-                            scale: (0.8 + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)),
+                            scale: (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)),
                             opacity: 1,
                         },{
                              /* Wait 100ms before alternating back. */
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                console.log("Change z-index");
                                 item.style['z-index'] = zIndex;
                                 changedZIndex = true;
                             }
@@ -328,9 +321,7 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
                              /* Wait 100ms before alternating back. */
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
-                            console.log((complete * 100) + "%");
                             if(complete * 100 > 50 && !changedZIndex) {
-                                console.log("Change z-index");
                                 item.style['z-index'] = -1;
                                 changedZIndex = true;
                             }
@@ -343,76 +334,62 @@ module.exports = ['$timeout', '$interval', '$compile', function($timeout, $inter
             });
         }
 
+        /**
+         * Run interval in order to auto slide
+         */
         function runInterval(){
             return $interval(function() {
-                if(defaultOptions.rtl) {
-                    moveRight(defaultOptions.transitionDuration);
+                if(options.rtl) {
+                    moveRTL(options.transitionDuration);
                 }
                 else {
-                    moveLeft(defaultOptions.transitionDuration);
+                    moveLTR(options.transitionDuration);
                 }
-            }, defaultOptions.slideDuration * 1000);
+            }, options.slideDuration * 1000);
         }
 
         return {
             restrict: "A",
             scope: true,
-            compile: function(tElement, tAttributes) {
+            link: function(scope, element, attr) {
+                //initialize directive container
+                addStyleOnContainer(element[0]);
 
-
-                return function(scope, element, attr) {
-                    //init
-                    addStyleOnContainer(element[0]);
-
-                    var rtl = angular.isDefined(attr.rtl) ?  attr.rtl === "true" : true;
-                    var auto = angular.isDefined(attr.autoSlide) ?  attr.autoSlide === "true" : true;
-
-                    //set options TODO rename in options and see defaults ooptions object
-                    defaultOptions = {
-                        autoSlide: auto,
-                        rtl: rtl,
-                        transitionDuration: parseInt(attr.animationDuration, 10) || 500, //in ms
-                        slideDuration: parseInt(attr.slideDuration, 10) || 3, //in sec
-                        itemDisplayed: parseInt(attr.itemDisplayed, 10) || 5, //item displayed in the same time
-                    };
-
-                    scope.carouselIndex = 0;
-                    indexToDisplay = 0;
-/*
-                    scope.changeIndex = function (index) {
-                        if(index !== indexToDisplay) {
-                            if(angular.isDefined(interval)) {
-                                $interval.cancel(interval);
-                            }
-                            move(index);
-                        }
-                    }*/
-
-                    //Timeout needed in order to force digest so generate ng-repeat elements
-                    $timeout(function (){
-                        itemsElements = $(element).children();
-                        initItems(scope);
-                        selectItemsToDisplay(scope.carouselIndex, defaultOptions.itemDisplayed);
-                        initItemsStyle();
-
-                        containerElement.style.display = "none";
-
-
-                        //
-                        for(var i = 0 ; i < itemsElements.length ; i ++ ) {
-                            $timeout(moveRight(0), 0);
-                        }
-
-                        $timeout(function() {
-                            containerElement.style.display = "block";
-                        }, 200);
-
-                        //
-                        if(defaultOptions.autoSlide) {
-                            interval = runInterval();
-                        }
-                    },0);
+                //Initialize carousel options
+                var rtl = angular.isDefined(attr.rtl) ?  attr.rtl === "true" : defaultOptions.rtl;
+                var auto = angular.isDefined(attr.autoSlide) ?  attr.autoSlide === "true" : defaultOptions.auto;
+                options = {
+                    autoSlide: auto,
+                    rtl: rtl,
+                    transitionDuration: parseInt(attr.animationDuration, 10) || defaultOptions.transitionDuration,
+                    slideDuration: parseInt(attr.slideDuration, 10) || defaultOptions.slideDuration,
+                    itemDisplayed: parseInt(attr.itemDisplayed, 10) || defaultOptions.itemDisplayed,
                 };
+
+                //TODO ?? Put a starting index value
+                //indexToDisplay = attr.startingIndex || 0;
+
+                //Timeout needed in order to force digest so generate ng-repeat elements
+                $timeout(function (){
+                    itemsElements = $(element).children();
+                    initItems(scope);
+                    selectItemsToDisplay(indexToDisplay, options.itemDisplayed);
+                    initItemsStyle();
+
+                    //Call in order to avoid UI bug on first call.
+                    containerElement.style.display = "none";
+                    for(var i = 0 ; i < itemsElements.length ; i ++ ) {
+                        $timeout(moveRTL(0), 0);
+                    }
+                    $timeout(function() {
+                        containerElement.style.display = "block";
+                    }, 200);
+
+                    // Run auto slide if needed
+                    if(options.autoSlide) {
+                        interval = runInterval();
+                    }
+                },0);
             }
-        }
+        };
     }];

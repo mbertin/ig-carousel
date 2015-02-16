@@ -11,6 +11,7 @@ require('../bower_components/velocity/velocity.ui.js');
 
 angular.module('ig-carousel', [])
 	.directive('igCarousel', require('./directives/ig-carousel'))
+	.service('IGCarouselService', require('./services/IGCarouselService'))
 	.run(['$rootScope', function($rootScope) {
         console.log('Module ig-carousel runnning');
     }]);
