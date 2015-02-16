@@ -1,4 +1,4 @@
-module.exports = ['$timeout', '$interval', '$compile', 'IGCarouselService', function($timeout, $interval, $compile, IGCarouselService) {
+module.exports = ['$timeout', '$interval', '$compile', 'ig-service', function($timeout, $interval, $compile, IGCarouselService) {
 
         // Constants
         var defaultOptions = {
@@ -6,7 +6,7 @@ module.exports = ['$timeout', '$interval', '$compile', 'IGCarouselService', func
             transitionDuration: 1000, //in ms
             slideDuration: 3, //in sec
             itemDisplayed: 5, //item displayed in the same time
-            rtl: true,//right to left
+            rtl: true //right to left
         };
 
         var deltaZ = 100,
@@ -123,10 +123,16 @@ module.exports = ['$timeout', '$interval', '$compile', 'IGCarouselService', func
                 }
                 else {
                     var itemIndex = itemsToDisplay.indexOf(item.id);
-                    item.style.left = (itemIndex * deltaX) + "px";
                     item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
-                    item.style.transform = "scale(" + (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)) + ")";
                     item.style.display = "block";
+
+                    $(item).velocity({
+                        left: (itemIndex * deltaX)  + "px",
+                        scale: (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)),
+                    },
+                    {
+                        duration: 10
+                    });
                 }
             });
         }
@@ -278,7 +284,8 @@ module.exports = ['$timeout', '$interval', '$compile', 'IGCarouselService', func
                     $(item).velocity({
                         left: leftPos,
                         scale: newScale,
-                    }, {
+                    },
+                    {
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
@@ -299,15 +306,15 @@ module.exports = ['$timeout', '$interval', '$compile', 'IGCarouselService', func
                             left: (itemIndex * deltaX) + "px",
                             scale: (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)),
                             opacity: 1,
-                        },{
-                             /* Wait 100ms before alternating back. */
-                        duration: duration,
-                        progress: function(elements, complete, remaining, start, tweenValue) {
-                            if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = zIndex;
-                                changedZIndex = true;
+                        },
+                        {
+                            duration: duration,
+                            progress: function(elements, complete, remaining, start, tweenValue) {
+                                if(complete * 100 > 50 && !changedZIndex) {
+                                    item.style['z-index'] = zIndex;
+                                    changedZIndex = true;
+                                }
                             }
-                        }
                     });
                 }
                 else if(itemsToDisplay.indexOf(item.id) === -1 && lastItems.indexOf(item.id) > -1) { //item exitance
@@ -377,13 +384,13 @@ module.exports = ['$timeout', '$interval', '$compile', 'IGCarouselService', func
                     initItemsStyle();
 
                     //Call in order to avoid UI bug on first call.
-                    containerElement.style.display = "none";
+                   /* containerElement.style.display = "none";
                     for(var i = 0 ; i < itemsElements.length ; i ++ ) {
-                        $timeout(moveRTL(0), 0);
+                        $timeout(moveRTL(10), (i+1)* 10);
                     }
                     $timeout(function() {
                         containerElement.style.display = "block";
-                    }, 200);
+                    }, 500);*/
 
                     // Run auto slide if needed
                     if(options.autoSlide) {

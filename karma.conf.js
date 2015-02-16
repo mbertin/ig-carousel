@@ -20,9 +20,9 @@ module.exports = function (config) {
             'bower_components/velocity/velocity.min.js',
             'bower_components/angular-mocks/angular-mocks.js',
             './dist/ig-carousel.js',
-            './test/init.js',
-            './test/ig-carouselTest.js',
-            './test/IGCarouselServiceTest.js'
+            './test/initTest.js',
+            './test/ig-carousel.spec.js',
+            './test/ig-service.spec.js'
         ],
 
         // list of files to exclude

@@ -6,8 +6,10 @@ module.exports = [function () {
     var IGCarouselService = function() {};
 
     /**
-     * Define the style of the category item if it's selected by setting the associated background define in category.color
-     * @param category, the category to style
+     * Get the min diff in a array for going from an index to another in a array with a specified length
+     * @param newIndex, the new index to go
+     * @param oldIndex, the old index that indicate the start
+     * @param arrayLength, the size of the given array
      * @returns object containing style property
      */
     IGCarouselService.getMinDiff = function (newIndex, oldIndex, arrayLength) {
@@ -21,7 +23,7 @@ module.exports = [function () {
             rightCursor = ((rightCursor + 1) >= arrayLength) ? 0 : rightCursor + 1;
         }
 
-        if(leftCursor === newIndex) {
+        if(leftCursor === newIndex && rightCursor !== newIndex) {
             diff = diff * -1;
         }
 
