@@ -1,4 +1,4 @@
-module.exports = ['$timeout', '$interval', '$compile', 'ig-service', function($timeout, $interval, $compile, IGCarouselService) {
+module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service', function($rootScope, $timeout, $interval, $compile, IGCarouselService) {
 
         // Constants
         var defaultOptions = {
@@ -20,7 +20,6 @@ module.exports = ['$timeout', '$interval', '$compile', 'ig-service', function($t
             deltaX = 0,
             deltaScale = 0.0,
             lastItems = [],
-            interval,
             options,
             rtlTmp;
 
@@ -100,17 +99,14 @@ module.exports = ['$timeout', '$interval', '$compile', 'ig-service', function($t
 
             $.each(itemsElements, function(index, item) {
 
-                $(item).mouseover(function () {
-                    if(angular.isDefined(interval)){
-                        $interval.cancel(interval);
+                $(item).mouseenter(function () {
+                    if(angular.isDefined($rootScope.IGInterval)){
+                        $interval.cancel($rootScope.IGInterval);
                     }
                 });
                 $(item).mouseleave(function () {
                     if(options.autoSlide){
-                        if(angular.isDefined(interval)) {
-                            $interval.cancel(interval);
-                        }
-                        interval = runInterval();
+                        runInterval();
                     }
                 });
                 item.style.position = "absolute";
@@ -162,10 +158,7 @@ module.exports = ['$timeout', '$interval', '$compile', 'ig-service', function($t
                 }
 
                 if(options.autoSlide && (indexToDisplay === newIndex) ){
-                    if(angular.isDefined(interval)) {
-                        $interval.cancel(interval);
-                    }
-                    interval = runInterval();
+                    runInterval();
                 }
             };
 
@@ -345,14 +338,19 @@ module.exports = ['$timeout', '$interval', '$compile', 'ig-service', function($t
          * Run interval in order to auto slide
          */
         function runInterval(){
-            return $interval(function() {
-                if(options.rtl) {
-                    moveRTL(options.transitionDuration);
-                }
-                else {
-                    moveLTR(options.transitionDuration);
-                }
-            }, options.slideDuration * 1000);
+
+            if(angular.isDefined($rootScope.IGInterval)) {
+                $interval.cancel($rootScope.IGInterval);
+            }
+
+            $rootScope.IGInterval =  $interval(function() {
+                                        if(options.rtl) {
+                                            moveRTL(options.transitionDuration);
+                                        }
+                                        else {
+                                            moveLTR(options.transitionDuration);
+                                        }
+                                    }, options.slideDuration * 1000);
         }
 
         return {
@@ -383,18 +381,9 @@ module.exports = ['$timeout', '$interval', '$compile', 'ig-service', function($t
                     selectItemsToDisplay(indexToDisplay, options.itemDisplayed);
                     initItemsStyle();
 
-                    //Call in order to avoid UI bug on first call.
-                   /* containerElement.style.display = "none";
-                    for(var i = 0 ; i < itemsElements.length ; i ++ ) {
-                        $timeout(moveRTL(10), (i+1)* 10);
-                    }
-                    $timeout(function() {
-                        containerElement.style.display = "block";
-                    }, 500);*/
-
                     // Run auto slide if needed
                     if(options.autoSlide) {
-                        interval = runInterval();
+                        runInterval();
                     }
                 },0);
             }
