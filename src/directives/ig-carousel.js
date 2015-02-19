@@ -79,8 +79,8 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 $(item).attr("index", index);
                 $(item).click(function(event) {
                     var index = $(this).attr("index") | 0;
-                    if(angular.isDefined(interval)) {
-                        $interval.cancel(interval);
+                    if(angular.isDefined($rootScope.IGInterval)) {
+                        $interval.cancel($rootScope.IGInterval);
                     }
                     move(index);
                 });
