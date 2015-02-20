@@ -112,15 +112,20 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 item.style.position = "absolute";
 
                 if(itemsToDisplay.indexOf(item.id) === -1){
-                    item.style.display = "none";
-                    item.style.left = ($(containerElement).width()/4) + "px";
-                    item.style['z-index'] = -1;
-                    item.style.transform = "scale(minScale)";
+
+                    item.style['z-index'] = 0;
+                    $(item).velocity({
+                        left: 0 + deltaX,
+                        scale: (minScale),
+                    },
+                    {
+                        duration: 10
+                    });
+
                 }
                 else {
                     var itemIndex = itemsToDisplay.indexOf(item.id);
-                    item.style['z-index'] = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
-                    item.style.display = "block";
+                    item.style['z-index'] = (1+centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
 
                     $(item).velocity({
                         left: (itemIndex * deltaX)  + "px",
@@ -133,7 +138,19 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
             });
         }
 
+        function timeFunc (durationMove, newIndex) {
+            if(tmpRtl) {
+                moveRTL(durationMove);
+            }
+            else {
+                moveLTR(durationMove);
+            }
 
+            //once it finish to move we run the interval if needed
+            if(options.autoSlide && (indexToDisplay === newIndex) ){
+                runInterval();
+            }
+        };
 
         /**
          * Move items to the new index
@@ -146,29 +163,20 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 nbStep = Math.abs(diffIndex);
 
             tmpRtl = diffIndex > 0;
-            var duration = options.transitionDuration  - (nbStep * 30);
-            var timeoutDelay = 0;
+            var duration = options.transitionDuration / nbStep < 300 ? 300 : options.transitionDuration / nbStep;
+            var timeoutDelay = duration;
 
-            var timeFunc = function () {
-                if(tmpRtl) {
-                    moveRTL(duration);
-                }
-                else {
-                    moveLTR(duration);
-                }
-
-                if(options.autoSlide && (indexToDisplay === newIndex) ){
-                    runInterval();
-                }
-            };
+            timeFunc(duration, newIndex);
 
             //Repeat move element in function of nbStep
-            for(var i = 0 ; i < nbStep ; i++) {
-                $timeout(timeFunc, timeoutDelay);
-                timeoutDelay = duration;
-                duration = options.transitionDuration  - ((nbStep - i) * 30);
-            }
-
+            var moveInterval  = $interval(function() {
+                if(indexToDisplay === newIndex) {
+                    $interval.cancel(moveInterval);
+                }
+                else {
+                    timeFunc(duration, newIndex);
+                }
+            }, timeoutDelay-50);
         }
 
          /**
@@ -188,7 +196,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 var itemIndex = itemsToDisplay.indexOf(item.id);
                 var leftPos = (itemIndex * deltaX);
                 var newScale = (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
-                var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
+                var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex) + 1) * deltaZ;
                 var changedZIndex = false;
 
                 if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) > -1) { // Was displayed before and still displayed
@@ -209,21 +217,13 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 }
                 else if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) === -1) { //item entrance
 
-                    item.style.transform = "scale(0.2)";
-                    item.style.opacity = 0;
-                    item.style['z-index']  = - 1;
-                    item.style.display = "block";
-
                     $(item).velocity({
                         left: leftPos + "px",
-                        opacity: 1,
-                        scale: newScale
                     },
                     {
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style.display = "block";
                                 item.style['z-index'] = zIndex;
                                 changedZIndex = true;
                             }
@@ -233,19 +233,16 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 else if(itemsToDisplay.indexOf(item.id) === -1 && lastItems.indexOf(item.id) > -1) { //item exitance
 
                     $(item).velocity({
-                        left: ($(containerElement).width()/4) + "px",
-                        opacity: 0,
-                        scale: 0.7
+                        left: deltaX * centerIndex + "px",
                     }, {
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = -1;
+                                item.style['z-index'] = 0;
                                 changedZIndex = true;
                             }
                         },
                         complete: function(elements) {
-                            item.style.display = "none";
                         }
                     });
                 }
@@ -267,7 +264,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
              $.each(itemsElements, function(index, item) {
 
                 var itemIndex = itemsToDisplay.indexOf(item.id);
-                var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
+                var zIndex = (centerIndex - Math.abs(itemIndex - centerIndex) + 1) * deltaZ;
                 var changedZIndex = false;
                 var leftPos = (itemIndex * deltaX);
                 var newScale = (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale));
@@ -290,15 +287,9 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 }
                 else if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) === -1) { //item entrance
 
-                    item.style.transform = "scale(0.2)";
-                    item.style.display = "block";
-                    item.style.opacity = 0;
-                    item.style['z-index']  = - 1;
-
                     $(item).velocity({
                             left: (itemIndex * deltaX) + "px",
-                            scale: (minScale + ((centerIndex - Math.abs(itemIndex - centerIndex)) * deltaScale)),
-                            opacity: 1,
+                            scale: minScale,
                         },
                         {
                             duration: duration,
@@ -312,22 +303,18 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 }
                 else if(itemsToDisplay.indexOf(item.id) === -1 && lastItems.indexOf(item.id) > -1) { //item exitance
 
-                    item.style['z-index']  = - 1;
-
                     $(item).velocity({
-                            left: ($(containerElement).width()/4) + "px",
-                            opacity: 0,
+                            left: deltaX * centerIndex + "px",
                         },{
                              /* Wait 100ms before alternating back. */
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = -1;
+                                item.style['z-index'] = 0;
                                 changedZIndex = true;
                             }
                         },
                         complete: function(elements) {
-                            item.style.display = "none";
                         }
                     });
                 }
@@ -350,7 +337,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                                         else {
                                             moveLTR(options.transitionDuration);
                                         }
-                                    }, options.slideDuration * 1000);
+                                    }, options.slideDuration * 1000 + options.transitionDuration);
         }
 
         return {
