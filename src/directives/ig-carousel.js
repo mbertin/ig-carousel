@@ -79,10 +79,13 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 $(item).attr("index", index);
                 $(item).click(function(event) {
                     var index = $(this).attr("index") | 0;
-                    if(angular.isDefined($rootScope.IGInterval)) {
-                        $interval.cancel($rootScope.IGInterval);
+                    if(event.target !== this && index !== indexToDisplay) {
+                        event.preventDefault(); // Avoid click on child element, only authorize clic when item is displayed (index === indexToDisplay)
+                        if(angular.isDefined($rootScope.IGInterval)) {
+                            $interval.cancel($rootScope.IGInterval);
+                        }
+                        move(index);
                     }
-                    move(index);
                 });
             });
         }
