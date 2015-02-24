@@ -12,6 +12,10 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
         var deltaZ = 100,
             minScale = 0.8;
 
+        var scopeTmp,
+            moving = false;
+
+
         //
         var containerElement = null,
             itemsElements = [],
@@ -79,12 +83,13 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 $(item).attr("index", index);
                 $(item).click(function(event) {
                     var index = $(this).attr("index") | 0;
-                    if(event.target !== this && index !== indexToDisplay) {
+                    if(index !== indexToDisplay && !moving) {
                         event.preventDefault(); // Avoid click on child element, only authorize clic when item is displayed (index === indexToDisplay)
                         if(angular.isDefined($rootScope.IGInterval)) {
                             $interval.cancel($rootScope.IGInterval);
                         }
                         move(index);
+                        return false;
                     }
                 });
             });
@@ -142,6 +147,8 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
         }
 
         function timeFunc (durationMove, newIndex) {
+            moving = true;
+
             if(tmpRtl) {
                 moveRTL(durationMove);
             }
@@ -172,7 +179,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
             timeFunc(duration, newIndex);
 
             //Repeat move element in function of nbStep
-            var moveInterval  = $interval(function() {
+            var moveInterval = $interval(function() {
                 if(indexToDisplay === newIndex) {
                     $interval.cancel(moveInterval);
                 }
@@ -189,6 +196,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
         function moveRTL(duration) {
 
             indexToDisplay = indexToDisplay + 1 >= itemsElements.length ? 0 : indexToDisplay + 1;
+            tmpScope.carouselIndex = indexToDisplay;
 
             selectItemsToDisplay(indexToDisplay, options.itemDisplayed);
             var centerIndex = itemsToDisplay.indexOf(itemsElements[indexToDisplay].id);
@@ -215,7 +223,11 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                                 item.style['z-index'] = zIndex;
                                 changedZIndex = true;
                             }
+                        },
+                        complete: function () {
+                            moving = false;
                         }
+
                     });
                 }
                 else if(itemsToDisplay.indexOf(item.id) > -1 && lastItems.indexOf(item.id) === -1) { //item entrance
@@ -259,6 +271,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
         function moveLTR(duration) {
 
             indexToDisplay = ((indexToDisplay - 1) < 0) ? itemsElements.length - 1 : indexToDisplay - 1;
+            tmpScope.carouselIndex = indexToDisplay
 
             selectItemsToDisplay(indexToDisplay, options.itemDisplayed);
             var centerIndex = itemsToDisplay.indexOf(itemsElements[indexToDisplay].id);
@@ -285,6 +298,9 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                                 item.style['z-index'] = zIndex;
                                 changedZIndex = true;
                             }
+                        },
+                        complete: function () {
+                            moving = false;
                         }
                     });
                 }
@@ -363,6 +379,8 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
 
                 //TODO ?? Put a starting index value
                 //indexToDisplay = attr.startingIndex || 0;
+                scope.carouselIndex = 0;
+                tmpScope = scope;
 
                 //Timeout needed in order to force digest so generate ng-repeat elements
                 $timeout(function (){
