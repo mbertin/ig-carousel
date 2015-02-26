@@ -1,6 +1,7 @@
 var gulp = require('gulp'),
     browserify = require('gulp-browserify'),
     rename = require('gulp-rename'),
+    uglify = require('gulp-uglify'),
     karma = require('karma').server;
 
 var destDir = "dist/";
@@ -15,12 +16,15 @@ gulp.task('build-dev', function () {
         .pipe(gulp.dest("./dist/"));
 });
 
-gulp.task('build-prod', function () {
+gulp.task('prod', function () {
     return gulp.src('src/ig-carousel.js')
         .pipe(browserify({
-            debug: true
+            debug: false
         }))
         .pipe(rename('ig-carousel.js'))
+        .pipe(gulp.dest("./dist/"))
+        .pipe(uglify())
+        .pipe(rename('ig-carousel.min.js'))
         .pipe(gulp.dest("./dist/"));
 });
 
@@ -36,10 +40,9 @@ gulp.task('watch', function () {
 gulp.task('test', ['build-dev'], function (done) {
 
     karma.start({
-        configFile: 'karma.conf.js',
+        configFile: __dirname + '/karma.conf.js',
         singleRun: true
     }, done);
 });
-
 
 gulp.task('default', ['watch']);
