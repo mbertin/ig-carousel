@@ -121,7 +121,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
 
                 if(itemsToDisplay.indexOf(item.id) === -1){
 
-                    item.style['z-index'] = 0;
+                    $(item).css('z-index', 0);
                     $(item).velocity({
                         left: 0 + deltaX,
                         scale: (minScale),
@@ -133,7 +133,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                 }
                 else {
                     var itemIndex = itemsToDisplay.indexOf(item.id);
-                    item.style['z-index'] = (1+centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ;
+                    $(item).css('z-index', (1+centerIndex - Math.abs(itemIndex - centerIndex)) * deltaZ ) ;
 
                     $(item).velocity({
                         left: (itemIndex * deltaX)  + "px",
@@ -220,7 +220,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = zIndex;
+                                $(item).css('z-index', zIndex);
                                 changedZIndex = true;
                             }
                         },
@@ -239,7 +239,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = zIndex;
+                                $(item).css('z-index', zIndex);
                                 changedZIndex = true;
                             }
                         }
@@ -253,7 +253,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = 0;
+                                $(item).css('z-index', 0);
                                 changedZIndex = true;
                             }
                         },
@@ -295,7 +295,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = zIndex;
+                                $(item).css('z-index', zIndex);
                                 changedZIndex = true;
                             }
                         },
@@ -314,7 +314,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                             duration: duration,
                             progress: function(elements, complete, remaining, start, tweenValue) {
                                 if(complete * 100 > 50 && !changedZIndex) {
-                                    item.style['z-index'] = zIndex;
+                                    $(item).css('z-index', zIndex);
                                     changedZIndex = true;
                                 }
                             }
@@ -329,7 +329,7 @@ module.exports = ['$rootScope','$timeout', '$interval', '$compile', 'ig-service'
                         duration: duration,
                         progress: function(elements, complete, remaining, start, tweenValue) {
                             if(complete * 100 > 50 && !changedZIndex) {
-                                item.style['z-index'] = 0;
+                                $(item).css('z-index', 0);
                                 changedZIndex = true;
                             }
                         },
